@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Spear Phishing Awareness Quiz</title>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(to bottom right, #e0f7fa, #e1bee7);
+      margin: 0;
+      padding: 2rem;
+    }
+    .container {
+      max-width: 750px;
+      margin: auto;
+      background: white;
+      padding: 2rem;
+      border-radius: 15px;
+      box-shadow: 0 10px 20px rgba(0,0,0,0.15);
+    }
+    .scenario {
+      margin-bottom: 2rem;
+      padding: 1rem;
+      border-left: 5px solid #7b1fa2;
+      background-color: #f9f9f9;
+      border-radius: 8px;
+    }
+    .question {
+      font-weight: 600;
+      font-size: 1.1rem;
+      color: #333;
+    }
+    .buttons button {
+      margin: 0.5rem;
+      padding: 0.8rem 1.5rem;
+      font-size: 1rem;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      background-color: #7b1fa2;
+      color: white;
+      transition: background-color 0.3s ease;
+    }
+    .buttons button:hover {
+      background-color: #4a0072;
+    }
+    .feedback {
+      margin-top: 1rem;
+      font-style: italic;
+      color: #00695c;
+    }
+    .score {
+      font-weight: bold;
+      font-size: 1.3rem;
+      margin-top: 2rem;
+      text-align: center;
+      color: #2e7d32;
+    }
+    .progress-container {
+      width: 100%;
+      background-color: #eee;
+      border-radius: 5px;
+      overflow: hidden;
+      margin-bottom: 1rem;
+    }
+    .progress-bar {
+      height: 20px;
+      background-color: #7b1fa2;
+      width: 0;
+      transition: width 0.3s ease;
+    }
+    .restart {
+      display: flex;
+      justify-content: center;
+      margin-top: 1rem;
+    }
+    .restart button {
+      padding: 0.6rem 1.2rem;
+      font-size: 1rem;
+      background-color: #4caf50;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    @media (max-width: 600px) {
+  body {
+    padding: 1rem;
+  }
+
+  .container {
+    padding: 1.2rem;
+  }
+
+  .scenario {
+    padding: 0.8rem;
+  }
+
+  .buttons button {
+    display: block;
+    width: 100%;
+    margin: 0.5rem 0;
+  }
+
+  .confidence-slider {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .confidence-slider input[type="range"] {
+    width: 100%;
+  }
+
+  textarea {
+    width: 100%;
+  }
+
+  .restart button {
+    width: 100%;
+  }
+}
+
+  </style>
+</head>
+<body>
+<div id="preSurvey">
+  <h2>Pre-Training Survey</h2>
+  <label for="faculty">Faculty Enrolled:</label><br />
+  <select id="faculty" required>
+    <option value="" disabled selected>Select Faculty</option>
+    <option>Accounting</option>
+    <option>Business Law</option>
+    <option>Business Management</option>
+    <option>Economics</option>
+    <option>Finance</option>
+    <option>Hospitality Management</option>
+    <option>Marketing</option>
+    <option>Other</option>
+  </select><br /><br />
+
+  <label>Have you received prior training on phishing or spear phishing?</label><br />
+  <input type="radio" name="priorTraining" value="Yes" required> Yes
+  <input type="radio" name="priorTraining" value="No"> No<br /><br />
+
+  <p>Rate your agreement with the following (1 = Strongly Disagree, 5 = Strongly Agree):</p>
+
+  <div>
+    <label>I am confident in identifying phishing emails.</label><br />
+    <input type="range" id="q1" min="1" max="5" value="3"><br />
+    
+    <label>I know the difference between phishing and spear phishing.</label><br />
+    <input type="range" id="q2" min="1" max="5" value="3"><br />
+    
+    <label>I understand the typical tactics used in spear phishing attacks.</label><br />
+    <input type="range" id="q3" min="1" max="5" value="3"><br />
+    
+    <label>I know what steps to take if I suspect a spear phishing attempt.</label><br />
+    <input type="range" id="q4" min="1" max="5" value="3"><br />
+    
+    <label>I feel prepared to protect myself from email-based cyber threats.</label><br />
+    <input type="range" id="q5" min="1" max="5" value="3"><br />
+  </div><br />
+
+  <button onclick="startTraining()">Start Training</button>
+</div>
+
+<div id="phishingPractice" style="max-width:750px;margin:auto;display:none;background:#fff;padding:2rem;border-radius:12px;box-shadow:0 4px 10px rgba(0,0,0,0.1)">
+  <h2 style="color:#6a1b9a;">Practice: Identify Spear Phishing Clues</h2>
+  <div id="practiceScenario"></div>
+</div>
+
+<script>
+const practiceScenarios = [
+  {
+    email: `From: accounts@douglascollege.ca<br>
+Subject: Urgent Password Reset<br>
+<br>
+Dear Student,<br>
+Your account has been compromised. Click the link below to reset your password immediately.<br>
+http://douglas-college-security.com/reset<br>`,
+    correct: ["Urgency", "Suspicious domain", "Requests for sensitive info"]
+  },
+  {
+    email: `From: scholarships@douglascollege.ca<br>
+Subject: You’ve Won a $1000 Grant!<br>
+<br>
+Congrats! You're selected for an automatic $1000 grant. Just reply with your SIN and full address to claim.`,
+    correct: ["Too good to be true", "Requests for sensitive info"]
+  },
+  {
+    email: `From: admin@douglascollege.ca<br>
+Subject: Important System Update<br>
+<br>
+We are upgrading our student portal this weekend. No action is required from your side. Thank you!`,
+    correct: ["Legitimate"]
+  },
+  {
+    email: `From: douglasadmin@gmail.com<br>
+Subject: Payment Confirmation Needed<br>
+<br>
+Your payment is pending. Please send your credit card number to verify your status.`,
+    correct: ["Suspicious domain", "Requests for sensitive info"]
+  },
+  {
+    email: `From: it-support@douglascollege.ca<br>
+Subject: Security Notification<br>
+<br>
+There have been login attempts from overseas. Click here to confirm your credentials: douglas-security-check.com.`,
+    correct: ["Suspicious domain", "Urgency", "Requests for sensitive info"]
+  }
+];
+
+let currentPractice = 0;
+
+function renderPractice() {
+  const container = document.getElementById("practiceScenario");
+  const item = practiceScenarios[currentPractice];
+
+  container.innerHTML = `
+    <div style="background:#f3f3f3;padding:1rem;border-left:4px solid #7b1fa2;border-radius:6px;">
+      <pre style="white-space:pre-wrap;font-family:inherit;">${item.email}</pre>
+    </div>
+    <div style="margin-top:1rem;">
+      <label><input type="checkbox" value="Urgency"> Urgency</label><br>
+      <label><input type="checkbox" value="Suspicious domain"> Suspicious domain</label><br>
+      <label><input type="checkbox" value="Requests for sensitive info"> Requests for sensitive info</label><br>
+      <label><input type="checkbox" value="Too good to be true"> Too good to be true</label><br>
+      <label><input type="checkbox" value="Mismatched sender name/email"> Mismatched sender/email</label><br>
+      <label><input type="checkbox" value="Legitimate"> Legitimate</label><br>
+    </div>
+    <div id="practiceFeedback" style="margin-top:1rem;color:#2e7d32;"></div>
+    <button onclick="checkPractice()" style="margin-top:1rem;padding:0.5rem 1.2rem;border:none;background:#6a1b9a;color:white;border-radius:6px;">Check Answer</button>
+  `;
+}
+
+function checkPractice() {
+  const selected = Array.from(document.querySelectorAll('#practiceScenario input[type=checkbox]:checked')).map(cb => cb.value);
+  const correct = practiceScenarios[currentPractice].correct;
+
+  const feedback = document.getElementById("practiceFeedback");
+
+  const match = selected.length === correct.length && selected.every(val => correct.includes(val));
+
+  if (match) {
+    feedback.innerHTML = `✅ Correct! Good job.`;
+  } else {
+    feedback.innerHTML = `❌ Some selections are incorrect.<br><strong>Correct flags:</strong> ${correct.join(', ')}`;
+  }
+
+  const btn = document.createElement("button");
+  btn.textContent = "Next";
+  btn.style = "margin-top:1rem;padding:0.5rem 1.2rem;border:none;background:#4caf50;color:white;border-radius:6px;margin-left:1rem;";
+  btn.onclick = () => {
+    currentPractice++;
+    if (currentPractice < practiceScenarios.length) {
+      renderPractice();
+    } else {
+      document.getElementById("phishingPractice").innerHTML = `
+        <h2>✅ Practice Complete!</h2>
+        <p>Now you're ready to begin the full simulation.</p>
+        <button onclick="startQuiz()" style="margin-top:1rem;padding:0.7rem 1.5rem;background:#7b1fa2;color:#fff;border:none;border-radius:8px;">Start Quiz</button>
+      `;
+    }
+  };
+  document.getElementById("practiceScenario").appendChild(btn);
+}
+
+function startQuiz() {
+  document.getElementById("phishingPractice").style.display = "none";
+  document.querySelector(".container").style.display = "block";
+  renderQuestion();
+}
+
+renderPractice();
+</script>
+
+
+  <div class="container" style="display:none;">
+    <h2>Spear Phishing Awareness Quiz</h2>
+    <div class="progress-container">
+      <div class="progress-bar" id="progressBar"></div>
+    </div>
+    <div id="quiz"></div>
+    <div class="score" id="score"></div>
+    <div class="restart" id="restart" style="display:none">
+      <button onclick="restartQuiz()">Try Again</button>
+    </div>
+  </div>
+<script>
+  const quizData = {
+    timestamp: new Date().toISOString(),
+    faculty: '',
+    priorTraining: '',
+    q1: '', q2: '', q3: '', q4: '', q5: '',
+    scenario1Answer: '', scenario1Confidence: '', scenario1Time: '',
+    scenario2Answer: '', scenario2Confidence: '', scenario2Time: '',
+    scenario3Answer: '', scenario3Confidence: '', scenario3Time: '',
+    scenario4Answer: '', scenario4Confidence: '', scenario4Time: '',
+    scenario5Answer: '', scenario5Confidence: '', scenario5Time: '',
+    post1: '', post2: '', post3: '', post4: '', post5: '', openFeedback: ''
+  };
+
+function startTraining() {
+  const faculty = document.getElementById("faculty").value;
+  const prior = document.querySelector('input[name="priorTraining"]:checked');
+  if (!faculty || !prior) {
+    alert("Please answer all required questions.");
+    return;
+  }
+
+  // Capture pre-survey
+  quizData.faculty = faculty;
+  quizData.priorTraining = prior.value;
+  for (let i = 1; i <= 5; i++) {
+    quizData[`q${i}`] = document.getElementById(`q${i}`).value;
+  }
+
+  // ⛔ Hide PreSurvey ✅ Show Practice
+  document.getElementById("preSurvey").style.display = "none";
+  document.getElementById("phishingPractice").style.display = "block";
+  renderPractice();
+}
+
+
+const scenarios = [
+  {
+    text: `From: Dr. Jennifer Marks <j.marks@douglascoIIege.ca><br><br>
+Subject: Urgent Submission Required<br><br>
+Hi, I noticed you haven't uploaded your final case study yet. Please submit it immediately via the secure link below:<br><br>
+🔗 http://douglas-college-submissions.com/secure-upload<br><br>
+Best,<br>
+Dr. Marks`,
+    answer: "phishing",
+    explanation: "Spear phishing! The domain is fake ('douglascoIIege' with capital I’s instead of L’s), and the message uses urgency and a suspicious link."
+  },
+  {
+    text: `From: Douglas College Registrar <registrar@douglascollege.ca><br><br>
+Subject: Winter Semester Registration Confirmation<br><br>
+Dear Student,<br>
+Your registration for the Winter 2025 term has been processed. You can view your course schedule and tuition invoice in the student portal:<br><br>
+🔗 https://myaccount.douglascollege.ca<br><br>
+Thank you,<br>
+Registrar’s Office`,
+    answer: "legit",
+    explanation: "Legitimate. Comes from an official address, links to the real domain, and matches expected student activities."
+  },
+  {
+    text: `From: Campus Bookstore <bookstore@douglascolIege.shop><br><br>
+Subject: Free Textbook Access - Today Only!<br><br>
+Congratulations! You’ve been selected for free digital textbook access.<br>
+Click below to claim your materials now:<br><br>
+🔗 http://douglascolIege.shop/claim-book<br><br>
+Hurry — offer expires in 3 hours.`,
+    answer: "phishing",
+    explanation: "Phishing! Fake bookstore domain (note the misspelling: 'douglascolIege' again uses capital I), urgency tactic, and vague language."
+  },
+  {
+    text: `From: IT Support <support@douglascollege.ca><br><br>
+Subject: Scheduled Maintenance Notice<br><br>
+Dear Students,<br>
+IT services including Wi-Fi and Office 365 will be unavailable from 10:00 PM to 2:00 AM for routine maintenance.<br><br>
+We appreciate your patience.<br><br>
+Douglas College IT`,
+    answer: "legit",
+    explanation: "Legitimate. No action required, correct domain, and standard tone for maintenance updates."
+  },
+  {
+    text: `From: Parking Admin <parking@douglasparking.ca><br><br>
+Subject: Unpaid Violation - Final Notice<br><br>
+A recent violation has been recorded against your vehicle. Pay now to avoid further penalty:<br><br>
+🔗 http://douglasparking.ca/pay-ticket<br><br>
+Failure to comply may result in additional fines.`,
+    answer: "phishing",
+    explanation: "Phishing! Uses scare tactics and a suspicious payment link — parking at Douglas is managed via the student portal, not this site."
+  },
+  {
+    text: `From: LinkedIn Learning <no-reply@linkedin.com><br><br>
+Subject: New Cybersecurity Course Recommended for You<br><br>
+Hello,<br>
+Based on your interest in cybersecurity, we recommend starting this new spear phishing module:<br><br>
+🔗 https://www.linkedin.com/learning/spear-phishing-awareness<br><br>
+Stay sharp,<br>
+LinkedIn Learning`,
+    answer: "legit",
+    explanation: "Legitimate. From a verified sender and offers optional learning with a recognizable link."
+  },
+  {
+    text: `From: “Douglas Admin” <douglascollege.ca.admin@gmail.com><br><br>
+Subject: IT Security Warning<br><br>
+We’ve detected multiple login attempts from your account. For your safety, reset your password here:<br><br>
+🔗 http://douglascollege-reset.com<br><br>
+Failure to act will lead to account suspension.`,
+    answer: "phishing",
+    explanation: "Phishing! The sender uses a Gmail address and a fake reset link — Douglas would never send password requests this way."
+  },
+  {
+    text: `From: Co-op Coordinator <coop@douglascollege.ca><br><br>
+Subject: Resume Feedback Session Booked<br><br>
+Hello,<br>
+You’ve been successfully registered for the Co-op resume review session on Thursday, July 25, 10:30 AM.<br>
+Meeting link: https://douglascollege.zoom.us/j/98412345678<br><br>
+Please prepare your updated resume.<br><br>
+Regards,<br>
+Co-op Office`,
+    answer: "legit",
+    explanation: "Legitimate. Everything aligns with Douglas College branding and process."
+  },
+  {
+    text: `From: Student Health Services <health@douglascollege.ca><br><br>
+Subject: Free Mental Health Workshop Registration<br><br>
+Join us for a wellness workshop focused on managing exam stress.<br><br>
+Date: July 28, 2025<br>
+Time: 2:00 – 3:30 PM<br>
+Location: Room N222<br><br>
+Register here: https://www.douglascollege.ca/student-support/mental-health`,
+    answer: "legit",
+    explanation: "Legitimate. Details are specific, link is secure, and it’s from the college’s official department."
+  },
+  {
+    text: `From: “Douglas IT Team” <it-security@douglascollegehelpdesk.ca><br><br>
+Subject: Account Compromised - Action Required<br><br>
+Suspicious activity detected. Please verify your identity to avoid service interruption:<br><br>
+🔗 http://douglascollegehelpdesk.ca/security-check<br><br>
+Thank you,<br>
+Security Operations`,
+    answer: "phishing",
+    explanation: "Phishing! The domain looks like a helper site but isn't official. Douglas IT does not request login validation through such third-party domains."
+  }
+];
+
+
+  let current = 0;
+  let score = 0;
+  const confidences = [];
+  const startTimes = [];
+  const responseTimes = [];
+
+  function renderQuestion() {
+    const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length;
+    const avgTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+
+    const container = document.getElementById("quiz");
+    const progress = document.getElementById("progressBar");
+    const percent = Math.round((current / scenarios.length) * 100);
+    progress.style.width = percent + "%";
+    container.innerHTML = "";
+
+    if (current >= scenarios.length) {
+      const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length;
+      const avgTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+
+    document.getElementById("score").textContent =
+  `You got ${score} out of ${scenarios.length} correct.\nBadge: ${score >= 4 ? 'Security Defender 🛡️' : 'Phishing Apprentice ⚠️'}`;
+
+
+      container.innerHTML = `
+        <h3>Quiz Complete!</h3>
+        <p>Avg. Confidence: ${avgConfidence.toFixed(1)}</p>
+        <p>Avg. Response Time: ${avgTime.toFixed(2)} seconds</p>
+        <div class="feedback-form">
+          <h4>Post-Training Feedback</h4>
+          <p>Please rate the following elements on a scale of 1 (Strongly Disagree) to 5 (Strongly Agree):</p>
+
+          ${["The leaderboard motivated me to perform better in the simulation.",
+              "The mini-challenges helped reinforce my learning.",
+              "The training’s story/scenario made the experience more engaging.",
+              "Earning badges increased my motivation to continue the training.",
+              "The gamified elements helped me remember what to look for in phishing."]
+            .map((q, i) => `
+              <div style="margin-top:1rem;">
+                <label>${q}</label><br>
+                ${[1,2,3,4,5].map(val => `
+                  <label>
+                    <input type="radio" name="post${i+1}" value="${val}" />
+                    ${val}
+                  </label>`).join(' ')}
+              </div>`).join('')}
+
+          <div style="margin-top:1.5rem;">
+            <label>Which specific game elements did you find most helpful or memorable, and why?</label><br>
+            <textarea id="openFeedback" rows="4" style="width:100%; margin-top:0.5rem;"></textarea>
+          </div>
+          <div style="text-align:center; margin-top:2rem;">
+            <button onclick="submitPostSurvey()">Submit Feedback</button>
+          </div>
+        </div>`;
+      return;
+    }
+
+    const q = scenarios[current];
+    startTimes[current] = Date.now();
+
+    const div = document.createElement("div");
+    div.className = "scenario";
+    div.innerHTML = `
+      <div class="question">${q.text}</div>
+      <div class="buttons">
+        <button onclick="submitAnswer('phishing')">Spear-Phishing</button>
+        <button onclick="submitAnswer('legit')">Legitimate</button>
+      </div>
+      <div class="confidence-slider">
+        <label for="confidence">Confidence (1–5): </label>
+        <input type="range" id="confidence" name="confidence" min="1" max="5" value="3">
+        <div class="confidence-label">3</div>
+      </div>
+      <div class="feedback" id="feedback"></div>
+    `;
+    container.appendChild(div);
+
+    document.getElementById("confidence").addEventListener("input", function () {
+      this.nextElementSibling.textContent = this.value;
+    });
+  }
+
+  function submitAnswer(selected) {
+    const confidence = parseInt(document.getElementById("confidence").value);
+    confidences.push(confidence);
+    const timeTakenSec = (Date.now() - startTimes[current]) / 1000;
+    responseTimes.push(timeTakenSec);
+
+    const qNum = current + 1;
+    quizData[`scenario${qNum}Answer`] = selected;
+    quizData[`scenario${qNum}Confidence`] = confidence;
+    quizData[`scenario${qNum}Time`] = timeTakenSec.toFixed(2);
+
+    const correct = scenarios[current].answer;
+    const feedback = document.getElementById("feedback");
+    if (selected === correct) {
+      score++;
+      feedback.textContent = "✅ Correct! " + scenarios[current].explanation;
+    } else {
+      feedback.textContent = "❌ Incorrect. " + scenarios[current].explanation;
+    }
+
+    setTimeout(() => {
+      current++;
+      renderQuestion();
+    }, 2000);
+  }
+
+  function submitPostSurvey() {
+    for (let i = 1; i <= 5; i++) {
+      quizData[`post${i}`] = document.querySelector(`input[name="post${i}"]:checked`)?.value || "";
+    }
+    quizData.openFeedback = document.getElementById("openFeedback")?.value || "";
+
+    // 👉 Add these lines to submit the averages
+  const avgConfidence = (confidences.reduce((a, b) => a + b, 0) / confidences.length).toFixed(1);
+  const avgResponseTime = (responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length).toFixed(2);
+  quizData.avgConfidence = avgConfidence;
+  quizData.avgResponseTime = avgResponseTime;
+
+  // 👉 Optional: Send badge too
+  const badge = score >= 4 ? 'Security Defender 🛡️' : 'Phishing Apprentice ⚠️';
+  quizData.badge = badge;
+
+    fetch("https://sheetdb.io/api/v1/u6rpxogg84yl1", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ data: quizData })
+    })
+    .then(res => res.json())
+    .then(data => {
+      alert("✅ Thank you! Your feedback was submitted successfully.");
+    })
+    .catch(error => {
+      console.error("❌ Error submitting feedback:", error);
+      alert("Something went wrong while submitting.");
+    });
+  }
+</script>
+
+
+</body>
+</html>
