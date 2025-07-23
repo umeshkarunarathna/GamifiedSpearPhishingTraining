@@ -441,6 +441,8 @@ Security Operations`,
   function renderQuestion() {
     const avgConfidence = confidences.reduce((a, b) => a + b, 0) / confidences.length;
     const avgTime = responseTimes.reduce((a, b) => a + b, 0) / responseTimes.length;
+    quizData.score = `${score} / ${scenarios.length}`;
+
 
     const container = document.getElementById("quiz");
     const progress = document.getElementById("progressBar");
